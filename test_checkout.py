@@ -1,5 +1,4 @@
-from legacy_checkout import process_order
-
+from codigo_refatorado import process_order
 
 def test_process_order_vip_with_promo():
     customer = {"name": "Maria", "type": "vip"}
