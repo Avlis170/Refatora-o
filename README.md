@@ -44,3 +44,23 @@
 * **PROBLEMA ENCONTRADO:** O projeto possuía 0% de cobertura de testes, tornando qualquer alteração propensa a regressões e falhas não detectadas.
 * **ALTERAÇÃO REALIZADA:** Implementação de 7 testes unitários cobrindo cenários com diferentes tipos de clientes (regular, VIP, funcionário), cupons de desconto, taxas de frete por estado/expresso e detecção de duplicados.
 * **JUSTIFICATIVA:** Garante a estabilidade do sistema, atinge 99% de cobertura de código e assegura que as regras de negócio permaneçam intactas após as refatorações.
+
+
+---
+
+## USO DE INTELIGÊNCIA ARTIFICIAL
+
+**Ferramenta utilizada:**
+Gemini
+
+**Finalidade:**
+Apoio na identificação de maus cheiros de código (*code smells*), auxílio na estruturação das funções refatoradas, apoio na elaboração dos cenários de testes unitários com Pytest e formatação dos relatórios de métricas em Markdown.
+
+**Exemplo de sugestão recebida:**
+Substituição do algoritmo de verificação de produtos duplicados de um laço duplo $O(N^2)$ por um algoritmo com estrutura de dados `set` com complexidade $O(N)$.
+
+**A sugestão foi aceita, modificada ou rejeitada?**
+Aceita e modificada. A sugestão do algoritmo foi adotada e ajustada para retornar uma lista com os nomes únicos dos produtos duplicados, respeitando a estrutura de resposta esperada pelo código legado.
+
+**Como a equipe validou a solução?**
+A solução foi validada localmente através da execução da suíte de testes unitários no `pytest` (alcançando 99% de cobertura), além da verificação de métricas com `radon` (complexidade e manutenibilidade) e análise estática com `ruff` (zero avisos).
