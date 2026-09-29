@@ -17,11 +17,12 @@ ORDERS_PROCESSED = []
 
 # Extract Function: Funções Especializadas
 def calculate_subtotal(items):
-    """Calcula o subtotal somando apenas itens com quantidade maior que zero."""
-    subtotal = 0
-    for item in items:  # Rename Variable (x -> item)
-        if item["qty"] > 0:
-            subtotal += item["price"] * item["qty"]
+    subtotal = 0.0
+    for item in items:
+        qty = item.get("qty", 1)
+        if qty <= 0:
+            raise ValueError("A quantidade do item deve ser maior que zero.")
+        subtotal += item.get("price", 0.0) * qty
     return subtotal
 
 
