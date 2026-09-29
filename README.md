@@ -1,66 +1,64 @@
-# Projeto de Refatoração do Checkout Legado
+# REFactor Race Python
 
-1. **A função `process_order` possui excesso de responsabilidades:** Agrupa num único bloco de código múltiplos domínios de negócio (cálculo de subtotal, regras de descontos, validação de cupons, cálculo de frete regional e peso, impostos estaduais, pontos de fidelidade e identificação de produtos duplicados).
-2. **Duplicação de código:** O subtotal do pedido é calculado duas vezes em laços `for` separados (`total1` e `subtotal`).
-3. **Variável morta:** A variável `total1` é processada, mas nunca utilizada.
-4. **Algoritmo ineficiente de duplicados:** Utiliza dois laços aninhados ($O(N^2)$) para encontrar itens repetidos.
-5. **Elevado acoplamento e valores "hardcoded":** Regras fixas de negócio (impostos por estado, taxas de frete) declaradas diretamente em blocos `if/elif/else`.
-6. **Avisos de linter e sintaxe inadequada:** Comparações booleanas redundantes (`express == False`) e falta de formatação moderna.
-7. **Ausência de testes automatizados:** Nenhuma cobertura de testes unitários para prevenção de regressões.
+## EQUIPE
+- Integrante 1
+- Integrante 2
+- Integrante 3
 
----
+## DESCRIÇÃO
+Projeto de refatoração do sistema de processamento de checkout de pedidos. O objetivo principal foi transformar um código legado monolítico e de difícil manutenção em uma arquitetura limpa, modular, otimizada e coberta por testes unitários sem alterar o comportamento esperado de negócio.
 
-## JUSTIFICATIVA DAS DECISÕES DE REFATORAÇÃO
+## DIAGNÓSTICO INICIAL
+Antes da refatoração, o sistema apresentava:
+- Função monolítica ("God Function") acumulando múltiplas responsabilidades de negócio.
+- Complexidade ciclomática elevada e baixo índice de manutenibilidade.
+- Algoritmo ineficiente de busca de produtos duplicados $O(N^2)$.
+- Ausência total de testes unitários automatizados para garantir regressões.
+- Falta de tipagem estática e presencia de variáveis mortas/não utilizadas.
 
-### 1. Aplicação do Padrão "Extract Function" e Separação de Responsabilidades
-* **PROBLEMA ENCONTRADO:** A função `process_order` realizava todas as operações de validação, cálculo e formatação em um único bloco monolítico, tornando a leitura complexa (complexidade ciclomática = 18).
-* **ALTERAÇÃO REALIZADA:** Extração de funções especializadas e com responsabilidade única: `calculate_subtotal`, `calculate_discount`, `calculate_shipping`, `calculate_tax`, `calculate_loyalty_points` e `find_duplicate_products`.
-* **JUSTIFICATIVA:** A separação isola os domínios de negócio, permitindo testar cada cálculo individualmente, reduzindo a complexidade da função principal para 3 e facilitando reusabilidade e manutenção futura.
+## CODE SMELLS ENCONTRADOS
+- **Long Method / Large Class:** A função principal gerenciava regras de cupom, frete, impostos, fidelidade e duplicatas em um único bloco.
+- **Duplicate Code:** Lógicas de acréscimo de taxas e descontos repetidas em vários pontos.
+- **Dead Code:** Variável `total1` declarada no código sem qualquer leitura ou utilidade no retorno.
+- **Primitive Obsession:** Tipos de dados passados de forma genérica sem validações explícitas de entrada.
+- **Algoritmo Ineficiente:** Laços aninhados executando comparações quadráticas para identificar duplicatas.
 
----
+## REFATORAÇÕES REALIZADAS
+- **Extração de Funções (Extract Method):** Divisão da lógica em funções especialistas (`calculate_subtotal`, `calculate_discount`, `calculate_tax`, `calculate_shipping`, `calculate_loyalty_points` e `find_duplicate_products`).
+- **Otimização de Algoritmo:** Substituição dos laços aninhados $O(N^2)$ por verificação linear $O(N)$ utilizando a estrutura de dados `set`.
+- **Eliminação de Dead Code:** Remoção da variável não utilizada `total1`.
+- **Adição de Type Hints:** Tipagem estática em todas as funções para reforçar a segurança do código e suporte dos linters.
 
-### 2. Eliminação de Código Duplicado e Variáveis Inúteis
-* **PROBLEMA ENCONTRADO:** O cálculo do subtotal era executado duas vezes seguidas através de laços `for` redundantes, armazenando o primeiro resultado em uma variável não utilizada (`total1`).
-* **ALTERAÇÃO REALIZADA:** Remoção da variável `total1` e do primeiro laço `for`, concentrando toda a lógica de subtotal na função especialista `calculate_subtotal`.
-* **JUSTIFICATIVA:** Elimina desperdício de processamento, simplifica o fluxo de execução e remove código morto que causava confusão na leitura.
+## TESTES ADICIONADOS
+Suíte de testes desenvolvida com **Pytest** cobrindo os seguintes cenários:
+1. `test_customer_regular_with_discount`: Desconto por atuar limite mínimo de valor.
+2. `test_customer_vip_with_vip50_coupon`: Regra de cliente VIP acumulando cupom fixo.
+3. `test_customer_employee_discount`: Aplicação de taxa de desconto fixa para funcionários.
+4. `test_state_outside_southeast_and_express_shipping`: Cálculo de impostos fora do Sudeste e frete expresso.
+5. `test_maximum_discount_limit`: Garantia do teto máximo de desconto permitido (25%).
+6. `test_free_shipping_conditions`: Regra de isenção de frete vs frete expresso pago.
+7. `test_duplicate_products_detection`: Identificação de itens duplicados no carrinho.
+8. *Testes preparados para os Tickets 1 e 2 (quantidade inválida e cupons case-insensitive).*
 
----
+## MÉTRICAS ANTES E DEPOIS
+- **Complexidade Ciclomática (Radon):** Reduzida de nível crítico para **Classe A** em todas as funções.
+- **Manutenibilidade (Maintainability Index):** Elevação para a pontuação máxima de **Classe A**.
+- **Cobertura de Testes (Pytest-Cov):** Atingido o nível de **99% de cobertura de código**.
+- **Análise Estática (Ruff):** Redução de múltiplos alertas de linter para **0 avisos**.
 
-### 3. Remoção de "Magic Numbers" e Uso de Mapeamentos (Replace Conditional with Mapping)
-* **PROBLEMA ENCONTRADO:** Alíquotas de imposto estaduais e multiplicadores de frete expresso estavam inseridos diretamente em estruturas `if/elif/else` extensas e sem contextualização.
-* **ALTERAÇÃO REALIZADA:** Criação de constantes explicativas (`EXPRESS_SHIPPING_MULTIPLIER = 1.8`, `FREE_SHIPPING_THRESHOLD = 500.0`) e substituição das condicionais de imposto pelo dicionário `TAX_RATES`.
-* **JUSTIFICATIVA:** Torna o código autodocumentado, elimina números mágicos espalhados e permite atualizar alíquotas ou estados sem a necessidade de modificar estruturas condicionais complexas.
-
----
-
-### 4. Otimização do Algoritmo de Produtos Duplicados
-* **PROBLEMA ENCONTRADO:** A busca por produtos duplicados utilizava um laço duplo ($O(N^2)$) sobre a lista de itens.
-* **ALTERAÇÃO REALIZADA:** Reescrita do algoritmo utilizando a estrutura de dados `set` para rastrear itens vistos em uma única passagem ($O(N)$).
-* **JUSTIFICATIVA:** Melhora significativamente a eficiência de execução e reduz a complexidade algorítmica de processamento do carrinho.
-
----
-
-### 5. Criação de Suíte de Testes Automatizados com Pytest
-* **PROBLEMA ENCONTRADO:** O projeto possuía 0% de cobertura de testes, tornando qualquer alteração propensa a regressões e falhas não detectadas.
-* **ALTERAÇÃO REALIZADA:** Implementação de 7 testes unitários cobrindo cenários com diferentes tipos de clientes (regular, VIP, funcionário), cupons de desconto, taxas de frete por estado/expresso e detecção de duplicados.
-* **JUSTIFICATIVA:** Garante a estabilidade do sistema, atinge 99% de cobertura de código e assegura que as regras de negócio permaneçam intactas após as refatorações.
-
-
----
+## DECISÕES TÉCNICAS
+- **Manutenção da Assinatura:** A função pública `process_order` manteve seus parâmetros e estrutura de retorno idênticos para garantir compatibilidade retroativa.
+- **Uso de Sets para Duplicatas:** Escolha da estrutura `set` para garantir complexidade de busca $O(1)$ por elemento.
+- **Isolamento de Regras:** Modularização baseada no princípio da responsabilidade única (SRP), facilitando testes unitários isolados por regra de negócio.
 
 ## USO DE INTELIGÊNCIA ARTIFICIAL
+- **Ferramenta utilizada:** Gemini
+- **Finalidade:** Apoio na identificação de code smells, estruturação das funções especialistas, criação dos cenários de testes unitários no Pytest e formatação da documentação.
+- **Exemplo de sugestão recebida:** Otimização da função de duplicatas para $O(N)$ com uso de conjuntos.
+- **A sugestão foi aceita, modificada ou rejeitada?** Aceita e modificada para manter a estrutura exata do dicionário de retorno do código original.
+- **Como a equipe validou a solução?** Validação local via execução do Pytest (99% de cobertura), análise estática com Ruff e medição de complexidade com Radon.
 
-**Ferramenta utilizada:**
-Gemini
-
-**Finalidade:**
-Apoio na identificação de maus cheiros de código (*code smells*), auxílio na estruturação das funções refatoradas, apoio na elaboração dos cenários de testes unitários com Pytest e formatação dos relatórios de métricas em Markdown.
-
-**Exemplo de sugestão recebida:**
-Substituição do algoritmo de verificação de produtos duplicados de um laço duplo $O(N^2)$ por um algoritmo com estrutura de dados `set` com complexidade $O(N)$.
-
-**A sugestão foi aceita, modificada ou rejeitada?**
-Aceita e modificada. A sugestão do algoritmo foi adotada e ajustada para retornar uma lista com os nomes únicos dos produtos duplicados, respeitando a estrutura de resposta esperada pelo código legado.
-
-**Como a equipe validou a solução?**
-A solução foi validada localmente através da execução da suíte de testes unitários no `pytest` (alcançando 99% de cobertura), além da verificação de métricas com `radon` (complexidade e manutenibilidade) e análise estática com `ruff` (zero avisos).
+## MELHORIAS FUTURAS
+- **Parametrização Externa de Regras:** Mover as alíquotas de impostos por estado e valores de cupons de desconto para arquivos de configuração (JSON/YAML) ou banco de dados.
+- **Tratamento de Exceções Customizadas:** Criar classes de exceção específicas para erros de checkout (ex: `InvalidQuantityError`, `ExpiredCouponError`).
+- **Aprimoramento do Ticket de Validação:** Ativar e integrar completamente as validações estritas de quantidade e formatação de cupom.
